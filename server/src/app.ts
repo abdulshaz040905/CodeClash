@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import problemRoutes from "./routes/problemRoutes";
+import runRoutes from "./routes/runRoutes";
+
 
 import mongoose from "mongoose";
 
@@ -15,6 +17,7 @@ app.use(express.json());
 
 
 app.use("/api/problems", problemRoutes);
+app.use("/api/run", runRoutes);
 
 app.get("/", (req, res) => {
   res.send("API running...");
