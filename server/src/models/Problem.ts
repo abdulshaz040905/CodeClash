@@ -5,23 +5,23 @@ interface TestCase {
   output: string;
 }
 
-interface Problem {
+export interface ProblemType {
   title: string;
   description: string;
   difficulty: string;
   testCases: TestCase[];
 }
 
-const problemSchema = new mongoose.Schema<Problem>({
-  title: String,
-  description: String,
-  difficulty: String,
+const problemSchema = new mongoose.Schema<ProblemType>({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  difficulty: { type: String, required: true },
   testCases: [
     {
-      input: String,
-      output: String,
+      input: { type: String, required: true },
+      output: { type: String, required: true },
     },
   ],
 });
 
-export default mongoose.model<Problem>("Problem", problemSchema);
+export default mongoose.model<ProblemType>("Problem", problemSchema);
