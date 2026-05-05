@@ -32,14 +32,33 @@ const io = new Server(server, {
   },
 });
 const roomWinners: Record<string, string> = {};
+const roomTimers: Record<
+  string,
+  {
+    startTime: number;
+    duration: number;
+  }
+> = {};
 // 🧠 SOCKET LOGIC
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
   socket.on("joinRoom", (roomId) => {
-    socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
-  });
+  socket.join(roomId);
+
+  console.log(`User joined room: ${roomId}`);
+
+  // Create timer if room doesn't exist
+  if (!roomTimers[roomId]) {
+    roomTimers[roomId] = {
+      startTime: Date.now(),
+      duration: 300, // 5 minutes
+    };
+  }
+
+  // Send timer info to frontend
+  socket.emit("timerData", roomTimers[roomId]);
+});
 
   socket.on("submitResult", (data) => {
     const { roomId, success, user } = data;
