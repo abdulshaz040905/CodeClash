@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import problemRoutes from "./routes/problemRoutes";
 import runRoutes from "./routes/runRoutes";
 
+
 const app = express();
 
 app.use(cors());
@@ -39,9 +40,46 @@ const roomTimers: Record<
     duration: number;
   }
 > = {};
+
+let waitingPlayer: string | null = null;
 // 🧠 SOCKET LOGIC
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+
+  socket.on("findMatch", () => {
+  console.log("Player searching:", socket.id);
+
+  // No waiting player
+  if (!waitingPlayer) {
+    waitingPlayer = socket.id;
+
+    socket.emit("waiting");
+  } else {
+    // Create random room
+    const roomId =
+      "room_" + Math.random().toString(36).substring(7);
+
+    // Join both players
+    socket.join(roomId);
+
+    io.sockets.sockets
+      .get(waitingPlayer)
+      ?.join(roomId);
+
+    // Send room to both players
+    socket.emit("matchFound", roomId);
+
+    io.to(waitingPlayer).emit(
+      "matchFound",
+      roomId
+    );
+
+    console.log(
+      `Match created: ${roomId}`
+    );
+
+    waitingPlayer = null;
+  }
+});
 
   socket.on("joinRoom", (roomId) => {
   socket.join(roomId);
