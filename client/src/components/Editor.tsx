@@ -9,41 +9,41 @@ type TestResult = {
   passed: boolean;
 };
 
-const CodeEditor = () => {
+type Props = {
+  onBattleSubmit?: (success: boolean) => void;
+  battleEnded?: boolean;
+};
+
+const CodeEditor = ({ onBattleSubmit, battleEnded }: Props) => {
   const [code, setCode] = useState<string>(
-`a, b = map(int, input().split())
-print(a + b)`
+    `a, b = map(int, input().split())
+print(a + b)`,
   );
 
-  const [output, setOutput] = useState<string>("");
   const [results, setResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 🔹 RUN CODE (simple execution)
-  const runCode = async () => {
-    setLoading(true);
-    setOutput("");
-    try {
-      const res = await API.post("/run", { code });
-      setOutput(res.data.output || res.data.error);
-    } catch (err) {
-      setOutput("Error running code");
-    }
-    setLoading(false);
-  };
-
-  // 🔹 SUBMIT CODE (judge system)
   const submitCode = async () => {
+    // Prevent submit after battle end
+    if (battleEnded) {
+      alert("Battle has ended");
+      return;
+    }
+
     setLoading(true);
-    setResults([]);
 
     try {
       const res = await API.post("/run/submit", {
         code,
-        problemId: "69f75466676fc59bf3b4e489",
+        problemId: "69f5f7eb96935324167d9e3e",
       });
 
       setResults(res.data.results);
+
+      // Notify battle page
+      if (onBattleSubmit) {
+        onBattleSubmit(res.data.success);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -52,11 +52,14 @@ print(a + b)`
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Code Editor</h2>
-
-      {/* 🧠 Editor */}
-      <div style={{ height: "400px", border: "1px solid #ccc" }}>
+    <div>
+      {/* Monaco Editor */}
+      <div
+        style={{
+          height: "400px",
+          border: "1px solid gray",
+        }}
+      >
         <Editor
           height="100%"
           defaultLanguage="python"
@@ -66,54 +69,52 @@ print(a + b)`
         />
       </div>
 
-      {/* ⚡ Buttons */}
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={runCode} disabled={loading}>
-          Run Code
-        </button>
+      {/* Submit Button */}
+      <button
+        onClick={submitCode}
+        disabled={loading || battleEnded}
+        style={{
+          marginTop: "10px",
+          padding: "10px 20px",
+          cursor: battleEnded ? "not-allowed" : "pointer",
+        }}
+      >
+        {battleEnded ? "Battle Ended" : "Submit Code"}
+      </button>
 
-        <button onClick={submitCode} disabled={loading} style={{ marginLeft: "10px" }}>
-          Submit
-        </button>
-      </div>
-
-      {/* 🔄 Loading */}
+      {/* Loading */}
       {loading && <p>Running...</p>}
 
-      {/* 📤 Output */}
-      {output && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Output:</h3>
-          <pre>{output}</pre>
-        </div>
-      )}
+      {/* Results */}
+      <div style={{ marginTop: "20px" }}>
+        {results.map((r, index) => (
+          <div
+            key={index}
+            style={{
+              border: "1px solid gray",
+              padding: "10px",
+              marginBottom: "10px",
+              backgroundColor: r.passed ? "#d4edda" : "#f8d7da",
+            }}
+          >
+            <p>
+              <strong>Input:</strong> {r.input}
+            </p>
 
-      {/* 🧪 Test Case Results */}
-      {results.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Test Results:</h3>
+            <p>
+              <strong>Expected:</strong> {r.expected}
+            </p>
 
-          {results.map((r, index) => (
-            <div
-              key={index}
-              style={{
-                border: "1px solid #ddd",
-                padding: "10px",
-                marginBottom: "10px",
-                backgroundColor: r.passed ? "#d4edda" : "#f8d7da",
-              }}
-            >
-              <p><strong>Input:</strong> {r.input}</p>
-              <p><strong>Expected:</strong> {r.expected}</p>
-              <p><strong>Your Output:</strong> {r.output}</p>
-              <p>
-                <strong>Status:</strong>{" "}
-                {r.passed ? "✅ Passed" : "❌ Failed"}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+            <p>
+              <strong>Your Output:</strong> {r.output}
+            </p>
+
+            <p>
+              <strong>Status:</strong> {r.passed ? "✅ Passed" : "❌ Failed"}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
