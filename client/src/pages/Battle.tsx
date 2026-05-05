@@ -1,15 +1,30 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import CodeEditor from "../components/Editor";
+import { useParams } from "react-router-dom";
 
 const socket = io("http://localhost:5000");
 
 const Battle = () => {
-  const roomId = "room1";
+  const { roomId } = useParams();
 
-  const [user] = useState(
-    "User_" + Math.floor(Math.random() * 1000)
+  const [user] = useState(() => {
+  const savedUser =
+    sessionStorage.getItem("battleUser");
+
+  if (savedUser) return savedUser;
+
+  const newUser =
+    "User_" +
+    Math.floor(Math.random() * 1000);
+
+  sessionStorage.setItem(
+    "battleUser",
+    newUser
   );
+
+  return newUser;
+});
 
   const [winner, setWinner] = useState<string | null>(null);
 
